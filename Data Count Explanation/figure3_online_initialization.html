@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ROSE for online learning initialization</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    max-width: 720px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+    color: #2C2C2A;
+    line-height: 1.6;
+  }
+  h3 { font-size: 16px; font-weight: 500; margin: 0 0 4px 0; }
+  .subtitle { font-size: 13px; color: #5F5E5A; margin: 0 0 1rem 0; }
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 12px; font-size: 12px; color: #5F5E5A; }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .swatch { width: 12px; height: 12px; border-radius: 2px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 12px; }
+  .panel-title { font-size: 13px; font-weight: 500; margin: 0 0 4px 0; text-align: center; }
+  .canvas-wrap { position: relative; width: 100%; height: 230px; }
+  .footnote {
+    margin-top: 1rem;
+    padding: 12px 14px;
+    background: #F1EFE8;
+    border-radius: 8px;
+    font-size: 12px;
+    color: #5F5E5A;
+    line-height: 1.6;
+  }
+  .footnote strong { color: #2C2C2A; font-weight: 500; }
+</style>
+</head>
+<body>
+
+<h3>ROSE provides a stronger initialization for online learning</h3>
+<p class="subtitle">After 3-epoch SFT warm-up, online RL (GRPO) and on-policy distillation (OPD) both benefit more from a ROSE cold start.</p>
+
+<div class="legend">
+  <span class="legend-item"><span class="swatch" style="background: #B4B2A9;"></span>Original (no warm-up)</span>
+  <span class="legend-item"><span class="swatch" style="background: #85B7EB;"></span>Verified SFT warm-up</span>
+  <span class="legend-item"><span class="swatch" style="background: #534AB7;"></span>ROSE warm-up</span>
+</div>
+
+<div class="grid">
+  <div>
+    <p class="panel-title">Online GRPO &middot; Avg@8 (%)</p>
+    <div class="canvas-wrap"><canvas id="grpoAvg" role="img" aria-label="GRPO Avg@8 across Kukurasu and Minesweeper."></canvas></div>
+  </div>
+  <div>
+    <p class="panel-title">Online OPD &middot; Avg@8 (%)</p>
+    <div class="canvas-wrap"><canvas id="opdAvg" role="img" aria-label="OPD Avg@8 across Kukurasu and Minesweeper."></canvas></div>
+  </div>
+</div>
+
+<div class="grid">
+  <div>
+    <p class="panel-title">Online GRPO &middot; Pass@8 (%)</p>
+    <div class="canvas-wrap"><canvas id="grpoPass" role="img" aria-label="GRPO Pass@8 across Kukurasu and Minesweeper."></canvas></div>
+  </div>
+  <div>
+    <p class="panel-title">Online OPD &middot; Pass@8 (%)</p>
+    <div class="canvas-wrap"><canvas id="opdPass" role="img" aria-label="OPD Pass@8 across Kukurasu and Minesweeper."></canvas></div>
+  </div>
+</div>
+
+<div class="footnote">
+  <strong>Setup</strong>: 3-epoch offline SFT warm-up on 5K examples (same as Section 3 setup), followed by online learning (GRPO or OPD).
+  With matched warm-up data, ROSE-initialized models reach substantially higher final performance than Verified-SFT-initialized ones,
+  indicating ROSE produces a stronger starting point for online learning.
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+  const labels = ['Kukurasu', 'Minesweeper'];
+  const colors = { original: '#B4B2A9', verified: '#85B7EB', rose: '#534AB7' };
+
+  const commonOpts = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: (ctx) => ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(2) + '%' } }
+    },
+    scales: {
+      y: { beginAtZero: true, ticks: { callback: (v) => v + '%', font: { size: 11 } }, grid: { color: 'rgba(128,128,128,0.12)' } },
+      x: { ticks: { font: { size: 11 } }, grid: { display: false } }
+    }
+  };
+  const buildOpts = (yMax) => ({ ...commonOpts, scales: { ...commonOpts.scales, y: { ...commonOpts.scales.y, max: yMax } } });
+
+  new Chart(document.getElementById('grpoAvg'), {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        { label: 'Original', data: [0.00, 1.42], backgroundColor: colors.original, borderRadius: 3 },
+        { label: 'Verified SFT', data: [6.56, 10.33], backgroundColor: colors.verified, borderRadius: 3 },
+        { label: 'ROSE', data: [13.75, 20.67], backgroundColor: colors.rose, borderRadius: 3 }
+      ]
+    },
+    options: buildOpts(25)
+  });
+
+  new Chart(document.getElementById('opdAvg'), {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        { label: 'Original', data: [0.21, 1.83], backgroundColor: colors.original, borderRadius: 3 },
+        { label: 'Verified SFT', data: [8.75, 7.42], backgroundColor: colors.verified, borderRadius: 3 },
+        { label: 'ROSE', data: [17.60, 19.33], backgroundColor: colors.rose, borderRadius: 3 }
+      ]
+    },
+    options: buildOpts(25)
+  });
+
+  new Chart(document.getElementById('grpoPass'), {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        { label: 'Original', data: [0.00, 8.00], backgroundColor: colors.original, borderRadius: 3 },
+        { label: 'Verified SFT', data: [27.50, 56.67], backgroundColor: colors.verified, borderRadius: 3 },
+        { label: 'ROSE', data: [41.67, 72.00], backgroundColor: colors.rose, borderRadius: 3 }
+      ]
+    },
+    options: buildOpts(80)
+  });
+
+  new Chart(document.getElementById('opdPass'), {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        { label: 'Original', data: [0.83, 11.33], backgroundColor: colors.original, borderRadius: 3 },
+        { label: 'Verified SFT', data: [30.83, 39.33], backgroundColor: colors.verified, borderRadius: 3 },
+        { label: 'ROSE', data: [41.67, 61.33], backgroundColor: colors.rose, borderRadius: 3 }
+      ]
+    },
+    options: buildOpts(80)
+  });
+</script>
+
+</body>
+</html>

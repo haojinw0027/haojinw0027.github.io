@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ROSE vs Verified SFT — three settings</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    max-width: 720px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+    color: #2C2C2A;
+    line-height: 1.6;
+  }
+  h3 { font-size: 16px; font-weight: 500; margin: 0 0 4px 0; }
+  .subtitle { font-size: 13px; color: #5F5E5A; margin: 0 0 1rem 0; }
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 12px; font-size: 12px; color: #5F5E5A; }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .swatch { width: 12px; height: 12px; border-radius: 2px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .panel-title { font-size: 13px; font-weight: 500; margin: 0 0 4px 0; text-align: center; }
+  .canvas-wrap { position: relative; width: 100%; height: 260px; }
+  .footnote {
+    margin-top: 1rem;
+    padding: 12px 14px;
+    background: #F1EFE8;
+    border-radius: 8px;
+    font-size: 12px;
+    color: #5F5E5A;
+    line-height: 1.6;
+  }
+  .footnote strong { color: #2C2C2A; font-weight: 500; }
+</style>
+</head>
+<body>
+
+<h3>ROSE consistently outperforms full off-policy SFT</h3>
+<p class="subtitle">Avg@8 and Pass@8 across three settings, matched data budget. Higher is better.</p>
+
+<div class="legend">
+  <span class="legend-item"><span class="swatch" style="background: #B4B2A9;"></span>Original</span>
+  <span class="legend-item"><span class="swatch" style="background: #85B7EB;"></span>Verified SFT</span>
+  <span class="legend-item"><span class="swatch" style="background: #534AB7;"></span>ROSE (Stitch SFT)</span>
+</div>
+
+<div class="grid">
+  <div>
+    <p class="panel-title">Avg@8 (%)</p>
+    <div class="canvas-wrap">
+      <canvas id="avgChart" role="img" aria-label="Avg@8 comparison across three settings: Kukurasu, Minesweeper, and RLVE 10-task. ROSE outperforms Verified SFT in all three."></canvas>
+    </div>
+  </div>
+  <div>
+    <p class="panel-title">Pass@8 (%)</p>
+    <div class="canvas-wrap">
+      <canvas id="passChart" role="img" aria-label="Pass@8 comparison across three settings."></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="footnote">
+  <strong>Single-task</strong> (Kukurasu, Minesweeper): 5K examples each.
+  <strong>Multi-task</strong> (RLVE): 2.5K examples total across 10 tasks (250 per task).
+  ROSE training data is unfiltered (mixed correct/incorrect), Verified SFT uses only verified-correct trajectories.
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+  const labels = ['Kukurasu', 'Minesweeper', 'RLVE (10 tasks)'];
+  const colors = { original: '#B4B2A9', verified: '#85B7EB', rose: '#534AB7' };
+
+  const commonOpts = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: (ctx) => ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(2) + '%' } }
+    },
+    scales: {
+      y: { beginAtZero: true, ticks: { callback: (v) => v + '%', font: { size: 11 } }, grid: { color: 'rgba(128,128,128,0.12)' } },
+      x: { ticks: { font: { size: 11 } }, grid: { display: false } }
+    }
+  };
+
+  new Chart(document.getElementById('avgChart'), {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        { label: 'Original', data: [0.10, 1.58, 5.56], backgroundColor: colors.original, borderRadius: 3 },
+        { label: 'Verified SFT', data: [6.88, 6.83, 5.56], backgroundColor: colors.verified, borderRadius: 3 },
+        { label: 'ROSE', data: [11.98, 16.08, 10.42], backgroundColor: colors.rose, borderRadius: 3 }
+      ]
+    },
+    options: { ...commonOpts, scales: { ...commonOpts.scales, y: { ...commonOpts.scales.y, max: 20 } } }
+  });
+
+  new Chart(document.getElementById('passChart'), {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        { label: 'Original', data: [0.83, 10.00, 19.44], backgroundColor: colors.original, borderRadius: 3 },
+        { label: 'Verified SFT', data: [25.00, 39.33, 27.78], backgroundColor: colors.verified, borderRadius: 3 },
+        { label: 'ROSE', data: [30.00, 62.00, 41.67], backgroundColor: colors.rose, borderRadius: 3 }
+      ]
+    },
+    options: { ...commonOpts, scales: { ...commonOpts.scales, y: { ...commonOpts.scales.y, max: 70 } } }
+  });
+</script>
+
+</body>
+</html>
