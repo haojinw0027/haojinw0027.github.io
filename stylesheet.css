@@ -149,3 +149,13 @@
       color: gray;
       margin: 15px;
   }
+  /* Compact section spacing */
+  h2 {
+    margin-top: 0.5em;
+    margin-bottom: 0.3em;
+  }
+
+  h3 {
+    margin-top: 0.3em;
+    margin-bottom: 0.2em;
+  }
